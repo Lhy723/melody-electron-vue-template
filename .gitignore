@@ -1,0 +1,29 @@
+# Dependencies and generated build output
+node_modules/
+dist/
+dist-verify/
+out/
+
+# Local secrets and package-manager credentials
+.env
+.env.*
+.npmrc
+
+# Local tool state and IDE workspace data
+.mimosa/
+.zcode/
+.idea/
+
+# Local rollback copies
+*.bak
+
+# Unknown or machine-generated root artifacts
+/NUL
+/NUL.map
+/.upgrade-direct-list.json
+
+# Logs and operating-system files
+*.log*
+.DS_Store
+Thumbs.db
+Desktop.ini
