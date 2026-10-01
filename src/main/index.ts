@@ -17,9 +17,7 @@ function createWindow(): BrowserWindow {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      preload: join(__dirname, '../preload/index.js')
     }
   })
 
@@ -75,8 +73,8 @@ function createWindow(): BrowserWindow {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  // Set app user model id for windows (与 electron-builder.yml 的 appId 保持一致)
+  electronApp.setAppUserModelId('com.electron.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -86,8 +84,8 @@ app.whenReady().then(() => {
   })
 
   createWindow()
-  // IPC
-  mainIpc(mainWindow)
+  // 窗口控制 IPC 按事件来源解析窗口，注册一次即可
+  mainIpc()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

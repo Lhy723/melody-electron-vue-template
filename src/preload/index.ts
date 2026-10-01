@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-// Expose only the window controls required by the renderer.
+// 仅暴露窗口控制所需的最小 API（沙箱与上下文隔离均保持开启）
 const electronAPI = {
   minimize: () => ipcRenderer.send('window-min'),
   toggleMaximize: () => ipcRenderer.send('window-maxOrRestore'),
@@ -14,19 +14,4 @@ const electronAPI = {
   }
 }
 
-// Keep the existing custom API global while avoiding exposure of ipcRenderer itself.
-const api = {}
-
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
-} else {
-  // @ts-ignore (defined in index.d.ts)
-  window.electron = electronAPI
-  // @ts-ignore (defined in index.d.ts)
-  window.api = api
-}
+contextBridge.exposeInMainWorld('electron', electronAPI)

@@ -6,6 +6,5 @@ declare global {
       close: () => void
       onWindowState: (listener: (maximized: boolean) => void) => () => void
     }
-    api: unknown
   }
 }
