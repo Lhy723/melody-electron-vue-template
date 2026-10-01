@@ -21,9 +21,7 @@
     "build:linux": "pnpm run build && electron-builder --linux"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-updater": "^6.8.9",
     "pinia": "^4.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
     "vue-router": "^5.3.1"
@@ -61,5 +59,8 @@
     "vue": "^3.5.43",
     "vue-tsc": "^3.3.11"
   },
-  "packageManager": "pnpm@12.8.1"
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }

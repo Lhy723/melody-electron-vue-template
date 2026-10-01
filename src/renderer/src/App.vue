@@ -5,16 +5,15 @@ import { useOsTheme, darkTheme } from 'naive-ui'
 import { useRouter } from 'vue-router'
 import Provider from '@renderer/components/global/Provider.vue'
 import Navigation from '@renderer/components/navigation/Navigation.vue'
-import { musicData, appStatus, appSettings } from '@renderer/stores'
+import { appStatus, appSettings } from '@renderer/stores'
 import Menu from '@renderer/components/menu/Menu.vue'
 import Layout from '@renderer/components/global/Layout.vue'
 import DemoPlayBar from '@renderer/components/global/DemoPlayBar.vue'
 
 const router = useRouter()
-const music = musicData()
 const status = appStatus()
 const settings = appSettings()
-const { autoPlay, showSider, autoSignIn, autoCheckUpdates, themeType, themeAuto } = storeToRefs(settings)
+const { showSider, themeType, themeAuto } = storeToRefs(settings)
 const { showPlayBar, asideMenuCollapsed, showFullPlayer } = storeToRefs(status)
 
 // 主题：手动优先，跟随系统时读取 OS 偏好

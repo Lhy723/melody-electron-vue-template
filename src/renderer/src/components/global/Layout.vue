@@ -1,8 +1,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
-import { musicData, appStatus, appSettings } from '@renderer/stores'
+import { appStatus, appSettings } from '@renderer/stores'
 
-const music = musicData()
 const status = appStatus()
 const settings = appSettings()
 const { showPlayBar } = storeToRefs(status)

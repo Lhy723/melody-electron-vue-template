@@ -11,7 +11,7 @@ const router = useRouter()
 const status = appStatus()
 const settings = appSettings()
 const { asideMenuCollapsed, searchInputFocus } = storeToRefs(status)
-const { showGithub, showSider, themeAutoCover } = storeToRefs(settings)
+const { showSider } = storeToRefs(settings)
 
 // 站点信息
 const appName = import.meta.env.VITE_APP_TITLE
@@ -139,22 +139,6 @@ const test = () => {
       }
     }
   }
-  .github {
-    margin-left: 12px;
-    -webkit-app-region: no-drag;
-  }
-  .main-menu {
-    -webkit-app-region: no-drag;
-    margin-right: 12px;
-    display: none;
-    &.show {
-      display: flex;
-    }
-    @media (max-width: 900px) {
-      display: flex;
-    }
-  }
-
   &.no-sider {
     max-width: 1400px;
     margin: 0 auto;
@@ -183,9 +167,6 @@ const test = () => {
   @media (max-width: 700px) {
     .left {
       width: 100%;
-    }
-    .github {
-      display: none;
     }
   }
 }

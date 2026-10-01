@@ -1,23 +1,17 @@
 <!--搜索框-->
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
 import { Search16Regular } from '@vicons/fluent'
-import { appStatus, musicData } from '@renderer/stores'
+import { appStatus } from '@renderer/stores'
 
-const router = useRouter()
-const music = musicData()
 const status = appStatus()
-const { playSongData } = storeToRefs(music)
 const { searchInputFocus } = storeToRefs(status)
 
-// 搜索框数据
+// 搜索框数据（模板占位：在此接入你的搜索逻辑）
 const searchInpRef = ref(null)
 const searchInputValue = ref('')
-const searchInterval = ref(null)
-const searchRealkeyword = ref(null)
-const searchPlaceholder = ref('搜索音乐')
+const searchPlaceholder = ref('搜索')
 
 // 搜索框输入限制
 const noSideSpace = (value) => !value.startsWith(' ')
@@ -28,46 +22,16 @@ const searchInputToFocus = () => {
 }
 // 搜索框 取消聚焦
 const closeSearch = () => {
-  // 取消聚焦状态
-  status.searchInputFocus = false
+  searchInputFocus.value = false
   searchInpRef.value?.blur()
 }
-// 更换搜索框关键词
-const updatePlaceholder = async () => {
-  searchPlaceholder.value = '搜索音乐'
-}
-// 更新搜索框关键词
-const changePlaceholder = () => {
-  updatePlaceholder()
-  // 5分钟
-  searchInterval.value = setInterval(updatePlaceholder, 5 * 60 * 1000)
-}
-
-// 前往搜索
+// 前往搜索（模板占位：接入你的业务路由或接口）
 const toSearch = (val) => {
-  // 未输入内容且不存在推荐
-  if (!val && searchPlaceholder.value === '搜索音乐') return false
-  // 取消聚焦状态
+  const keyword = val?.trim()
+  if (!keyword) return
   closeSearch()
-  // 触发测试
-  if (Number(val) === 114514) return router.push('/test')
-  // 写入搜索历史
-
-  // 前往
-  router.push({
-    path: '/search/songs',
-    query: {
-      keywords: val?.trim()
-    }
-  })
+  searchInputValue.value = ''
 }
-onMounted(() => {
-  changePlaceholder()
-})
-
-onBeforeUnmount(() => {
-  clearInterval(searchInterval.value)
-})
 </script>
 
 <template>
