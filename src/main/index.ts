@@ -2,15 +2,34 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import log from 'electron-log/main'
 import mainIpc from './mainIpc'
+import { appStore } from './modules/appStore'
+import { registerFileIpc } from './modules/fileIpc'
+import { registerStoreIpc } from './modules/storeIpc'
+import { registerHttpIpc } from './modules/httpIpc'
+import { setupMainLog, registerLogIpc } from './modules/logIpc'
+import { registerUpdateIpc } from './modules/updateIpc'
 
 let mainWindow: BrowserWindow
 
 function createWindow(): BrowserWindow {
+  // 读取上次保存的窗口状态（最大化标志 + 正常状态下的边界）
+  const saved = appStore.get('windowState') as
+    | { maximized?: boolean; width?: number; height?: number; x?: number; y?: number }
+    | undefined
+  // 仅当是有限数字时才采用，否则回退默认尺寸
+  const width = typeof saved?.width === 'number' && Number.isFinite(saved.width) ? saved.width : 1280
+  const height = typeof saved?.height === 'number' && Number.isFinite(saved.height) ? saved.height : 740
+  const x = typeof saved?.x === 'number' && Number.isFinite(saved.x) ? saved.x : undefined
+  const y = typeof saved?.y === 'number' && Number.isFinite(saved.y) ? saved.y : undefined
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 740,
+    width,
+    height,
+    x,
+    y,
     show: false,
     frame: false,
     titleBarStyle: 'customButtonsOnHover',
@@ -18,6 +37,20 @@ function createWindow(): BrowserWindow {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js')
+    }
+  })
+
+  // 恢复上次的最大化状态
+  if (saved?.maximized) {
+    mainWindow.maximize()
+  }
+
+  // 关闭时保存窗口状态，下次启动恢复
+  mainWindow.on('close', () => {
+    try {
+      appStore.set('windowState', { maximized: mainWindow.isMaximized(), ...mainWindow.getNormalBounds() })
+    } catch {
+      /* 保存失败忽略 */
     }
   })
 
@@ -32,27 +65,6 @@ function createWindow(): BrowserWindow {
   mainWindow.on('unmaximize', () => {
     mainWindow.webContents.send('windowState', false)
   })
-
-  // mainWindow.on("resized", () => {
-  //   store.set("windowSize", mainWindow.getBounds());
-  // });
-  //
-  // mainWindow.on("moved", () => {
-  //   store.set("windowSize", this.mainWindow.getBounds());
-  // });
-
-  // 窗口关闭
-  // mainWindow.on("close", (event) => {
-  //   if (platform.isLinux) {
-  //     app.quit()
-  //   } else {
-  //     if (!app.isQuiting) {
-  //       event.preventDefault()
-  //       this.mainWindow.hide()
-  //     }
-  //     return false;
-  //   }
-  // })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -83,9 +95,18 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // 初始化主进程日志，并捕获未处理异常
+  setupMainLog()
+  process.on('uncaughtException', (error) => log.error('未捕获异常', error))
+
   createWindow()
   // 窗口控制 IPC 按事件来源解析窗口，注册一次即可
   mainIpc()
+  registerFileIpc()
+  registerStoreIpc()
+  registerHttpIpc()
+  registerLogIpc()
+  registerUpdateIpc()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -102,6 +123,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.

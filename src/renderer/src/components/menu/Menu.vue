@@ -8,7 +8,8 @@ import {
   CheckboxChecked16Regular,
   ChatMultiple16Regular,
   List16Regular,
-  Desktop16Regular
+  Desktop16Regular,
+  Options16Regular
 } from '@vicons/fluent'
 import { computed, h, ref, watch } from 'vue'
 
@@ -110,6 +111,18 @@ const menuOptions = computed(() => [
           ),
         key: 'components-window',
         icon: () => h(Desktop16Regular)
+      },
+      {
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: { name: 'components-desktop' }
+            },
+            () => ['桌面能力']
+          ),
+        key: 'components-desktop',
+        icon: () => h(Options16Regular)
       }
     ]
   },

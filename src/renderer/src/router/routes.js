@@ -49,6 +49,14 @@ const routes = [
     },
     component: () => import('../views/ComponentsWindow.vue')
   },
+  {
+    path: '/components/desktop',
+    name: 'components-desktop',
+    meta: {
+      title: '桌面能力'
+    },
+    component: () => import('../views/DesktopCapabilities.vue')
+  },
   // 设置
   {
     path: '/settings',
