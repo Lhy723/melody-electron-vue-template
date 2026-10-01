@@ -8,6 +8,48 @@ const routes = [
     },
     component: () => import('../views/Home.vue')
   },
+  // 组件展示
+  {
+    path: '/components/basic',
+    name: 'components-basic',
+    meta: {
+      title: '基础组件'
+    },
+    component: () => import('../views/ComponentsBasic.vue')
+  },
+  {
+    path: '/components/form',
+    name: 'components-form',
+    meta: {
+      title: '表单校验'
+    },
+    component: () => import('../views/ComponentsForm.vue')
+  },
+  {
+    path: '/components/feedback',
+    name: 'components-feedback',
+    meta: {
+      title: '反馈交互'
+    },
+    component: () => import('../views/ComponentsFeedback.vue')
+  },
+  {
+    path: '/components/navigation',
+    name: 'components-navigation',
+    meta: {
+      title: '导航结构'
+    },
+    component: () => import('../views/ComponentsNavigation.vue')
+  },
+  {
+    path: '/components/window',
+    name: 'components-window',
+    meta: {
+      title: '窗口与主题'
+    },
+    component: () => import('../views/ComponentsWindow.vue')
+  },
+  // 设置
   {
     path: '/settings',
     name: 'settings',
