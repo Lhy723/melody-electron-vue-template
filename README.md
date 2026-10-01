@@ -2,7 +2,7 @@
 
 一个可直接二次开发的 **Electron + Vue 3 桌面应用模板**：无边框窗口、自绘标题栏、侧边菜单导航、明暗主题、持久化设置与一组可交互的组件演示页均已就绪。点击右上角 **Use this template** 即可把它作为你自己项目的起点。
 
-![Tech Stack](https://img.shields.io/badge/Electron-44-47848F) ![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D) ![Naive UI](https://img.shields.io/badge/Naive_UI-2.x-18A058) ![License](https://img.shields.io/badge/License-MIT-green)
+![CI](https://github.com/Lhy723/melody-electron-vue-template/actions/workflows/ci.yml/badge.svg) ![Tech Stack](https://img.shields.io/badge/Electron-44-47848F) ![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D) ![Naive UI](https://img.shields.io/badge/Naive_UI-2.x-18A058) ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## 功能特性
 
@@ -63,7 +63,7 @@ src/
     └── src/
         ├── App.vue               # 布局骨架 + 主题接入
         ├── router/               # 路由表（routes.js 注册页面）
-        ├── stores/               # Pinia：应用状态 / 设置 / 播放数据占位
+        ├── stores/               # Pinia：应用状态 / 设置（持久化）
         ├── components/
         │   ├── global/           # Provider / Layout / DemoPlayBar
         │   ├── menu/             # 侧边菜单（Menu.vue 配置菜单项）
