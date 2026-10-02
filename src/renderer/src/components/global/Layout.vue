@@ -1,10 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { appStatus, appSettings } from '@renderer/stores'
+import { appSettings } from '@renderer/stores'
 
-const status = appStatus()
 const settings = appSettings()
-const { showPlayBar } = storeToRefs(status)
 const { showSider } = storeToRefs(settings)
 </script>
 

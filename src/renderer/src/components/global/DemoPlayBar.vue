@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // 模板演示底栏：桌面应用常驻播放条的布局范例（不接音频，纯演示数据）
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -39,7 +39,7 @@ const volume = ref(0.7)
 const muted = ref(false)
 
 // 播放进度：走 appStatus 的 playSeek（0-1），播放时定时推进
-let timer = null
+let timer: ReturnType<typeof setInterval> | null = null
 const stopTimer = () => {
   if (timer) {
     clearInterval(timer)
@@ -55,7 +55,7 @@ onMounted(() => {
 onBeforeUnmount(stopTimer)
 
 // 时间格式化
-const formatTime = (seconds) => {
+const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60)
   const s = Math.floor(seconds % 60)
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
@@ -66,7 +66,7 @@ const currentTime = computed(() => playSeek.value * duration.value)
 const progressPercent = computed(() => Math.round(playSeek.value * 100))
 
 // 进度拖动
-const seekTo = (value) => {
+const seekTo = (value: number) => {
   playSeek.value = value / 100
 }
 

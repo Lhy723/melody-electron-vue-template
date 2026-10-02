@@ -1,16 +1,24 @@
-<script setup>
+<script setup lang="ts">
 // 表单与校验演示：完整提交流程
 import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
+import type { FormInst, FormValidationError } from 'naive-ui'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 import { demoFormRules, demoSelectOptions } from '@renderer/utils/demoData'
 
 const message = useMessage()
-const formRef = ref(null)
+const formRef = ref<FormInst | null>(null)
 
 // 表单数据
-const formValue = ref({
+interface DemoFormValue {
+  username: string
+  email: string
+  age: number | null
+  city: string | null
+  note: string
+}
+const formValue = ref<DemoFormValue>({
   username: '',
   email: '',
   age: null,
@@ -20,10 +28,10 @@ const formValue = ref({
 
 // 提交状态
 const submitting = ref(false)
-const submitResult = ref(null)
+const submitResult = ref<(DemoFormValue & { time: string }) | null>(null)
 
 const handleSubmit = () => {
-  formRef.value?.validate((errors) => {
+  formRef.value?.validate((errors: FormValidationError[] | undefined) => {
     if (errors) {
       message.error('表单校验未通过，请检查标红项')
       return

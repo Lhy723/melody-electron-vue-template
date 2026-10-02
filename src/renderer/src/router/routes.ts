@@ -1,4 +1,6 @@
-const routes = [
+import type { RouteRecordRaw } from 'vue-router'
+
+const routes: RouteRecordRaw[] = [
   // 首页
   {
     path: '/',

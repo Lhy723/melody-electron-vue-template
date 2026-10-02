@@ -33,6 +33,8 @@
 | 日志 | electron-log |
 | 自动更新 | electron-updater（GitHub Releases） |
 
+> 说明：`typescript` 锁定在 6.x（`~6.0.2`）——当前 `vue-tsc` 与 `typescript-eslint` 尚未兼容 TypeScript 7（registry latest），待工具链支持后可直接升级。
+
 ## 快速开始
 
 1. 点击仓库右上角 **Use this template** → **Create a new repository**，以模板创建你自己的仓库并克隆；

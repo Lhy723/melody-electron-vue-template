@@ -1,36 +1,34 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import { storeToRefs } from 'pinia'
 import {
   Subtract16Regular,
   Maximize16Regular,
   Window16Regular,
   Dismiss16Regular
 } from '@vicons/fluent'
-import { appSettings } from '@renderer/stores'
-
-const settings = appSettings()
+// preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）
+declare const electron: {
+  minimize: () => void
+  toggleMaximize: () => void
+  close: () => void
+  onWindowState: (listener: (maximized: boolean) => void) => () => void
+}
 
 // 默认窗口状态
 const defaultWindowState = ref(false)
 
-// 退出软件弹窗数据
-const closeTipTimeout = ref(null)
-const closeTipModal = ref(false)
-const closeTipCheckbox = ref(false)
-
 // 窗口最小化
-const windowMin = () => {
+const windowMin = (): void => {
   electron.minimize()
 }
 
 // 窗口最大化或恢复
-const maxOrRestore = () => {
+const maxOrRestore = (): void => {
   electron.toggleMaximize()
 }
 
 // 窗口关闭
-const winClose = () => {
+const winClose = (): void => {
   electron.close()
 }
 

@@ -1,5 +1,5 @@
 <!--搜索框-->
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Search16Regular } from '@vicons/fluent'
@@ -9,24 +9,24 @@ const status = appStatus()
 const { searchInputFocus } = storeToRefs(status)
 
 // 搜索框数据（模板占位：在此接入你的搜索逻辑）
-const searchInpRef = ref(null)
+const searchInpRef = ref<{ focus: () => void; blur: () => void } | null>(null)
 const searchInputValue = ref('')
 const searchPlaceholder = ref('搜索')
 
 // 搜索框输入限制
-const noSideSpace = (value) => !value.startsWith(' ')
+const noSideSpace = (value: string): boolean => !value.startsWith(' ')
 // 搜索框 聚焦
-const searchInputToFocus = () => {
+const searchInputToFocus = (): void => {
   searchInpRef.value?.focus()
   searchInputFocus.value = true
 }
 // 搜索框 取消聚焦
-const closeSearch = () => {
+const closeSearch = (): void => {
   searchInputFocus.value = false
   searchInpRef.value?.blur()
 }
 // 前往搜索（模板占位：接入你的业务路由或接口）
-const toSearch = (val) => {
+const toSearch = (val: string): void => {
   const keyword = val?.trim()
   if (!keyword) return
   closeSearch()
@@ -40,7 +40,7 @@ const toSearch = (val) => {
       ref="searchInpRef"
       v-model:value="searchInputValue"
       :class="searchInputFocus ? 'input focus' : 'input'"
-      :input-props="{ autoComplete: false }"
+      :input-props="{ autocomplete: 'off' }"
       :placeholder="searchPlaceholder"
       :allow-input="noSideSpace"
       round

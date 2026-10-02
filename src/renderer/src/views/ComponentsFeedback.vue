@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 // 反馈交互演示：Modal / Drawer / Message / Notification / Progress
 import { ref } from 'vue'
 import { useDialog, useMessage, useNotification } from 'naive-ui'
+import type { DrawerPlacement } from 'naive-ui'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 
@@ -15,8 +16,8 @@ const showPresetModal = ref(false)
 
 // 抽屉
 const showDrawer = ref(false)
-const drawerPlacement = ref('right')
-const openDrawer = (placement) => {
+const drawerPlacement = ref<DrawerPlacement>('right')
+const openDrawer = (placement: DrawerPlacement) => {
   drawerPlacement.value = placement
   showDrawer.value = true
 }
@@ -25,8 +26,9 @@ const openDrawer = (placement) => {
 const progressValue = ref(65)
 
 // 消息提示
-const notifyTypes = ['info', 'success', 'warning', 'error']
-const sendMessage = (type) => {
+const notifyTypes = ['info', 'success', 'warning', 'error'] as const
+type NotifyType = (typeof notifyTypes)[number]
+const sendMessage = (type: NotifyType) => {
   message[type](`这是一条 ${type} 消息`)
 }
 
@@ -44,7 +46,7 @@ const confirmDialog = () => {
 }
 
 // 通知
-const pushNotification = (type) => {
+const pushNotification = (type: NotifyType) => {
   notification[type]({
     title: `${type} 通知`,
     content: '这是一条桌面风格的通知示例，可自动关闭。',
@@ -84,7 +86,7 @@ const pushNotification = (type) => {
       description="从四个方向滑出的面板，适合放设置、详情等次级内容。"
     >
       <n-flex :size="12" wrap>
-        <n-button v-for="placement in ['right', 'left', 'top', 'bottom']" :key="placement" @click="openDrawer(placement)">
+        <n-button v-for="placement in (['right', 'left', 'top', 'bottom'] as const)" :key="placement" @click="openDrawer(placement)">
           {{ placement }}
         </n-button>
       </n-flex>
@@ -123,7 +125,7 @@ const pushNotification = (type) => {
     <!-- 抽屉面板 -->
     <n-drawer v-model:show="showDrawer" :placement="drawerPlacement" :width="360" :height="280">
       <n-drawer-content :title="`来自 ${drawerPlacement} 的抽屉`" closable>
-        <n-p depth="2 selectable">抽屉内容区域，可滚动，用于承载次级操作或详情信息。</n-p>
+        <n-p depth="2" class="selectable">抽屉内容区域，可滚动，用于承载次级操作或详情信息。</n-p>
       </n-drawer-content>
     </n-drawer>
   </div>

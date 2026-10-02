@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import {
   Home16Regular,
   Settings16Regular,
@@ -12,22 +12,25 @@ import {
   Options16Regular
 } from '@vicons/fluent'
 import { computed, h, ref, watch } from 'vue'
+import type { MenuInst, MenuOption, MenuGroupOption } from 'naive-ui'
+import { appStatus } from '@renderer/stores'
 
 const route = useRoute()
-const router = useRouter()
-const menuActiveKey = ref(route.name ?? 'home')
+const status = appStatus()
+const { asideMenuCollapsed } = storeToRefs(status)
+const menuActiveKey = ref<string>((route.name as string) ?? 'home')
 
 // 路由变化时同步菜单高亮（覆盖菜单外的编程式跳转）
 watch(
   () => route.name,
   (name) => {
-    if (name && name !== menuActiveKey.value) menuActiveKey.value = name
+    if (name && name !== menuActiveKey.value) menuActiveKey.value = name as string
   }
 )
 
 // 菜单数据
-const mainMenuRef = ref(null)
-const menuOptions = computed(() => [
+const mainMenuRef = ref<MenuInst | null>(null)
+const menuOptions = computed<Array<MenuOption | MenuGroupOption>>(() => [
   {
     type: 'group',
     label: '模板',
@@ -146,7 +149,7 @@ const menuOptions = computed(() => [
     ]
   }
 ])
-const checkMenuItem = async (key) => {
+const checkMenuItem = async (key: string) => {
   menuActiveKey.value = key
   mainMenuRef.value?.showOption(key)
 }

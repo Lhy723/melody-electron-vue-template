@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { CaretLeft16Regular, CaretRight16Regular } from '@vicons/fluent'
@@ -15,9 +15,6 @@ const { showSider } = storeToRefs(settings)
 
 // 站点信息
 const appName = import.meta.env.VITE_APP_TITLE
-const test = () => {
-  console.log('appname:', appName)
-}
 </script>
 
 <template>

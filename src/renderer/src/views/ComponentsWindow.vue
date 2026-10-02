@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // 窗口与主题演示：窗口控制 / 主题切换 / 布局开关
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -13,6 +13,13 @@ import { WeatherSunny16Regular, WeatherMoon16Regular } from '@vicons/fluent'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 import { appStatus, appSettings } from '@renderer/stores'
+
+// preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）
+declare const electron: {
+  minimize: () => void
+  toggleMaximize: () => void
+  close: () => void
+}
 
 const status = appStatus()
 const settings = appSettings()
@@ -35,7 +42,7 @@ const themeOptions = [
   { label: '深色', value: 'dark' },
   { label: '跟随系统', value: 'auto' }
 ]
-const setTheme = (value) => {
+const setTheme = (value: 'light' | 'dark' | 'auto') => {
   if (value === 'auto') {
     themeAuto.value = true
   } else {

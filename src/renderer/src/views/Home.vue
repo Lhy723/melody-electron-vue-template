@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 // 首页：模板概览与快速入口
+import { type Component } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Grid16Regular,
@@ -13,8 +14,17 @@ import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 
 const router = useRouter()
 
+// 快速入口条目类型
+interface QuickLink {
+  key: string
+  title: string
+  desc: string
+  icon: Component
+  route: string
+}
+
 // 模板功能入口
-const quickLinks = [
+const quickLinks: QuickLink[] = [
   {
     key: 'basic',
     title: '基础组件',
@@ -52,8 +62,14 @@ const quickLinks = [
   }
 ]
 
+// 技术栈条目类型
+interface TechStack {
+  label: string
+  value: string
+}
+
 // 模板技术栈
-const techStacks = [
+const techStacks: TechStack[] = [
   { label: 'Electron 44', value: '桌面壳' },
   { label: 'Vue 3', value: '组合式 API' },
   { label: 'Naive UI', value: '组件库' },

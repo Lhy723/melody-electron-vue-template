@@ -1,17 +1,11 @@
-<script setup>
+<script setup lang="ts">
 // 演示区块卡片：统一标题、说明与内容区
-defineProps({
+defineProps<{
   // 区块标题
-  title: {
-    type: String,
-    required: true
-  },
+  title: string
   // 一句话说明
-  description: {
-    type: String,
-    default: ''
-  }
-})
+  description?: string
+}>()
 </script>
 
 <template>

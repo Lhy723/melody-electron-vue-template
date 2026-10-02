@@ -29,6 +29,9 @@ jobs:
       - name: Lint
         run: pnpm exec eslint .
 
+      - name: 单元测试
+        run: pnpm test
+
       - name: 构建
         run: pnpm exec electron-vite build
 

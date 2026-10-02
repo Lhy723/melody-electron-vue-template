@@ -1,21 +1,22 @@
-<script setup>
+<script setup lang="ts">
 // 基础组件演示：按钮 / 输入 / 选择 / 数据展示
 import { ref } from 'vue'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 import { demoTableColumns, demoTableData, demoSelectOptions } from '@renderer/utils/demoData'
+import type { DemoTableRow } from '@renderer/utils/demoData'
 
 // 输入状态
 const inputValue = ref('')
 const textareaValue = ref('')
-const selectValue = ref(null)
-const multipleSelectValue = ref([])
+const selectValue = ref<string | null>(null)
+const multipleSelectValue = ref<string[]>([])
 const switchValue = ref(true)
 const sliderValue = ref(30)
 const rateValue = ref(3)
 
 // 表格行
-const rowKey = (row) => row.index
+const rowKey = (row: DemoTableRow) => row.index
 </script>
 
 <template>

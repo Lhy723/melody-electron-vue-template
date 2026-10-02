@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // 导航结构演示：Tabs / Breadcrumb / Pagination / Steps / Collapse / Timeline
 import { ref } from 'vue'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
@@ -15,7 +15,7 @@ const nextStep = () => {
 }
 
 // 折叠
-const expandedNames = ref(['first'])
+const expandedNames = ref<string[]>(['first'])
 
 // 标签页
 const activeTab = ref(demoTabPanes[0])
@@ -31,7 +31,7 @@ const activeTab = ref(demoTabPanes[0])
     <DemoSection title="标签页 Tabs" description="同层内容的分区切换，支持胶囊与分段样式。">
       <n-tabs v-model:value="activeTab" type="line">
         <n-tab-pane v-for="pane in demoTabPanes" :key="pane" :name="pane" :tab="pane">
-          <n-p depth="2 selectable">{{ pane }} 的内容区域，切换标签时保持各自状态。</n-p>
+          <n-p depth="2" class="selectable">{{ pane }} 的内容区域，切换标签时保持各自状态。</n-p>
         </n-tab-pane>
       </n-tabs>
       <n-tabs type="segment" animated>

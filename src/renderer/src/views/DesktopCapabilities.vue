@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // 桌面能力演示：文件对话框 / 拖拽读取 / 主进程存储 / HTTP 代理 / 文件日志 / 检查更新
 // 全部通过 preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）与主进程 IPC 通信
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
@@ -14,10 +14,24 @@ import {
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 
+// preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）
+declare const electron: {
+  openFile: () => Promise<{ canceled: boolean; path?: string; name?: string; content?: string }>
+  saveTextFile: (content: string, defaultName?: string) => Promise<{ canceled: boolean; path?: string }>
+  readDroppedFile: (filePath: string) => Promise<{ ok: boolean; path?: string; name?: string; content?: string; message?: string }>
+  getPathForFile: (file: File) => string
+  storeGet: (key: string) => Promise<unknown>
+  storeSet: (key: string, value: unknown) => Promise<void>
+  httpGet: (url: string) => Promise<{ ok: boolean; status: number; text?: string; message?: string }>
+  logWrite: (message: string, level?: 'info' | 'warn' | 'error') => Promise<string>
+  checkForUpdates: () => Promise<{ supported: boolean; version?: string; error?: string; reason?: string }>
+  onUpdateState: (listener: (payload: UpdateStatePayload) => void) => () => void
+}
+
 const message = useMessage()
 
 // IPC 异常统一转成可读文案
-const errMsg = (err) => (err instanceof Error ? err.message : String(err ?? '未知错误'))
+const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err ?? '未知错误'))
 
 /* ---------- 1. 打开与保存文件 ---------- */
 const openedFile = reactive({ path: '', name: '', content: '' })
@@ -67,7 +81,7 @@ const readingDrop = ref(false)
 // 渲染进程出于 Chromium 安全限制拿不到拖拽 File 对象的真实磁盘路径，
 // preload 内部需使用 Electron 的 webUtils.getPathForFile(file) 把 File 换成真实路径，
 // 再把路径交给主进程读取，因此这里先调 getPathForFile，再调 readDroppedFile。
-const onDrop = async (e) => {
+const onDrop = async (e: DragEvent) => {
   dropHover.value = false
   const file = e.dataTransfer?.files?.[0]
   if (!file) {
@@ -189,11 +203,18 @@ const writeLog = async () => {
 
 /* ---------- 6. 检查更新 ---------- */
 const checkingUpdate = ref(false)
-const updateResult = ref(null)
+// 检查更新返回结果
+interface UpdateCheckResult {
+  supported: boolean
+  version?: string
+  error?: string
+  reason?: string
+}
+const updateResult = ref<UpdateCheckResult | null>(null)
 const updateStateText = ref('')
 
 // onUpdateState 各 phase 的中文文案
-const updatePhaseText = {
+const updatePhaseText: Record<UpdateStatePayload['phase'], string> = {
   checking: '正在检查更新…',
   available: '发现新版本',
   none: '当前已是最新版本',
@@ -204,7 +225,7 @@ const updatePhaseText = {
 
 // 订阅主进程更新事件；onUpdateState 返回取消订阅函数，卸载时调用
 // 浏览器直接预览（无 preload）时 electron 不存在，做防御性跳过
-let cancelUpdateState = null
+let cancelUpdateState: (() => void) | null = null
 onMounted(() => {
   if (typeof electron === 'undefined') return
   cancelUpdateState = electron.onUpdateState((payload) => {

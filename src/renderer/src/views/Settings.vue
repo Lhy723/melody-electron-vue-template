@@ -1,11 +1,20 @@
-<script setup>
+<script setup lang="ts">
 // 模板设置页：外观与布局偏好的持久化示例
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useOsTheme } from 'naive-ui'
+import type { SelectOption } from 'naive-ui'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 import { appStatus, appSettings } from '@renderer/stores'
+
+// 主题选项值类型：dark / light / auto
+type ThemeOptionValue = 'dark' | 'light' | 'auto'
+
+// 主题选项类型
+interface ThemeOption {
+  label: string
+  value: ThemeOptionValue
+}
 
 const status = appStatus()
 const settings = appSettings()
@@ -13,15 +22,15 @@ const { asideMenuCollapsed, showPlayBar } = storeToRefs(status)
 const { showSider, siderShowCover, themeType, themeAuto, loadSize, systemFonts } =
   storeToRefs(settings)
 
-const osTheme = useOsTheme()
-
-const themeOptions = [
+const themeOptions: ThemeOption[] = [
   { label: '浅色', value: 'light' },
   { label: '深色', value: 'dark' },
   { label: '跟随系统', value: 'auto' }
 ]
-const currentThemeValue = computed(() => (themeAuto.value ? 'auto' : themeType.value))
-const setTheme = (value) => {
+const currentThemeValue = computed<ThemeOptionValue>(
+  () => (themeAuto.value ? 'auto' : themeType.value)
+)
+const setTheme = (value: ThemeOptionValue): void => {
   if (value === 'auto') {
     themeAuto.value = true
   } else {
@@ -30,10 +39,12 @@ const setTheme = (value) => {
   }
 }
 
-const fontOptions = ['HarmonyOS Sans', 'Lato', 'Fira Code', 'system-ui'].map((f) => ({
-  label: f,
-  value: f
-}))
+const fontOptions: SelectOption[] = ['HarmonyOS Sans', 'Lato', 'Fira Code', 'system-ui'].map(
+  (f) => ({
+    label: f,
+    value: f
+  })
+)
 </script>
 
 <template>
