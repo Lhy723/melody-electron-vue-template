@@ -66,6 +66,7 @@ src/
 │   ├── index.ts          # 窗口创建、生命周期、窗口状态记忆
 │   ├── mainIpc.ts        # 窗口控制 IPC
 │   └── modules/          # 能力模块：fileIpc / storeIpc / httpIpc / logIpc / updateIpc / appStore
+├── shared/               # 主/渲染共享契约：IPC 通道常量（channels.ts）与载荷类型（types.ts）
 ├── preload/              # preload 脚本：contextBridge 暴露窗口与桌面能力 API
 │   ├── index.ts
 │   └── index.d.ts
@@ -79,6 +80,7 @@ src/
         │   ├── menu/             # 侧边菜单（Menu.vue 配置菜单项）
         │   ├── navigation/       # 顶栏：搜索框、窗口控制
         │   └── demo/             # 演示页通用区块组件
+        ├── composables/          # 组合式函数：useUpdater / useFileOps 等 IPC 封装
         ├── utils/                # 演示数据等工具
         ├── style/                # 全局样式与动画
         └── views/                # 页面（首页、演示页、设置）
@@ -90,7 +92,7 @@ src/
 - **改名应用**：全局搜索替换 `star-melody-player`（`package.json`、`electron-builder.yml`、`src/main/index.ts` 的 AppUserModelID）；
 - **调整主题**：`components/global/Provider.vue` 中修改 `theme-overrides`；
 - **窗口控制**：参考 `components/navigation/WindowController.vue` 与 `src/main/mainIpc.ts` 的最小 IPC 用法；
-- **新增桌面能力**：在 `src/main/modules/` 新建模块注册 `handle` 通道，在 `src/preload/index.ts` 暴露对应方法并同步 `index.d.ts` 类型，参照 `fileIpc.ts` 的写法。
+- **新增桌面能力**：推荐 `pnpm gen:capability <name>` 生成主进程模块骨架，或按契约流程手工添加——在 `src/shared/ipc/channels.ts` 登记通道（载荷与结果类型放 `types.ts`）→ 在 `src/main/modules/` 实现 handler → 在 `src/preload/index.ts` 暴露方法（`index.d.ts` 同步签名）→ 视图经 `composables/` 或 `electron.*` 调用；通道两侧不匹配时 `src/ipc-contract.spec.ts` 契约元测试与编译期类型会双重报错。
 
 ## 进阶扩展指引
 

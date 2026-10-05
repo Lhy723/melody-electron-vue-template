@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 桌面能力演示：文件对话框 / 拖拽读取 / 主进程存储 / HTTP 代理 / 文件日志 / 检查更新
 // 全部通过 preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）与主进程 IPC 通信
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import {
   FolderOpen16Regular,
@@ -13,6 +13,7 @@ import {
 } from '@vicons/fluent'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
+import { useFileOps, useUpdater } from '@renderer/composables'
 
 // preload 以 contextBridge 暴露的 window.electron（页面内直接写作 electron）
 declare const electron: {
@@ -34,6 +35,8 @@ const message = useMessage()
 const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err ?? '未知错误'))
 
 /* ---------- 1. 打开与保存文件 ---------- */
+// 文件对话框与拖拽读取的 IPC 调用由 useFileOps 封装，消息提示留在本视图
+const { openTextFile, saveTextFile, readDroppedFile } = useFileOps()
 const openedFile = reactive({ path: '', name: '', content: '' })
 const opening = ref(false)
 const saving = ref(false)
@@ -41,8 +44,9 @@ const saving = ref(false)
 const openFile = async () => {
   opening.value = true
   try {
-    const res = await electron.openFile()
-    if (res.canceled) {
+    // 用户取消时 openTextFile 返回 null
+    const res = await openTextFile()
+    if (!res) {
       message.info('已取消选择文件')
       return
     }
@@ -60,12 +64,13 @@ const openFile = async () => {
 const saveOpenedFile = async () => {
   saving.value = true
   try {
-    const res = await electron.saveTextFile(openedFile.content, openedFile.name || 'demo.txt')
-    if (res.canceled) {
+    // 用户取消时 saveTextFile 返回 null，成功返回保存路径
+    const savedPath = await saveTextFile(openedFile.content, openedFile.name || 'demo.txt')
+    if (savedPath === null) {
       message.info('已取消保存')
       return
     }
-    message.success(`已保存到：${res.path}`)
+    message.success(`已保存到：${savedPath}`)
   } catch (err) {
     message.error(`保存文件失败：${errMsg(err)}`)
   } finally {
@@ -78,9 +83,7 @@ const droppedFile = reactive({ path: '', name: '', content: '' })
 const dropHover = ref(false)
 const readingDrop = ref(false)
 
-// 渲染进程出于 Chromium 安全限制拿不到拖拽 File 对象的真实磁盘路径，
-// preload 内部需使用 Electron 的 webUtils.getPathForFile(file) 把 File 换成真实路径，
-// 再把路径交给主进程读取，因此这里先调 getPathForFile，再调 readDroppedFile。
+// 拖拽读取由 useFileOps.readDroppedFile 封装：内部先把 File 对象换成真实磁盘路径，再由主进程按路径读取
 const onDrop = async (e: DragEvent) => {
   dropHover.value = false
   const file = e.dataTransfer?.files?.[0]
@@ -90,16 +93,15 @@ const onDrop = async (e: DragEvent) => {
   }
   readingDrop.value = true
   try {
-    // 兼容同步 string 与 Promise<string> 两种实现
-    const filePath = await electron.getPathForFile(file)
-    const res = await electron.readDroppedFile(filePath)
-    if (!res.ok) {
-      message.error(res.message || '读取拖拽文件失败')
+    // 读取失败（如拖入文件夹）时返回 null，异常向上抛出
+    const res = await readDroppedFile(file)
+    if (!res) {
+      message.error('读取拖拽文件失败')
       return
     }
-    droppedFile.path = res.path ?? filePath
-    droppedFile.name = res.name ?? file.name
-    droppedFile.content = res.content ?? ''
+    droppedFile.path = res.path
+    droppedFile.name = res.name
+    droppedFile.content = res.content
     message.success(`已读取：${droppedFile.name}`)
   } catch (err) {
     message.error(`读取拖拽文件失败：${errMsg(err)}`)
@@ -202,54 +204,12 @@ const writeLog = async () => {
 }
 
 /* ---------- 6. 检查更新 ---------- */
-const checkingUpdate = ref(false)
-// 检查更新返回结果
-interface UpdateCheckResult {
-  supported: boolean
-  version?: string
-  error?: string
-  reason?: string
-}
-const updateResult = ref<UpdateCheckResult | null>(null)
-const updateStateText = ref('')
-
-// onUpdateState 各 phase 的中文文案
-const updatePhaseText: Record<UpdateStatePayload['phase'], string> = {
-  checking: '正在检查更新…',
-  available: '发现新版本',
-  none: '当前已是最新版本',
-  downloading: '正在下载更新',
-  downloaded: '更新包下载完成，等待安装',
-  error: '更新出错'
-}
-
-// 订阅主进程更新事件；onUpdateState 返回取消订阅函数，卸载时调用
-// 浏览器直接预览（无 preload）时 electron 不存在，做防御性跳过
-let cancelUpdateState: (() => void) | null = null
-onMounted(() => {
-  if (typeof electron === 'undefined') return
-  cancelUpdateState = electron.onUpdateState((payload) => {
-    const base = updatePhaseText[payload.phase] ?? payload.phase
-    let text = base
-    if (payload.phase === 'downloading' && payload.percent != null) {
-      text = `${base}：${Math.round(payload.percent)}%`
-    } else if (payload.version) {
-      text = `${base}（v${payload.version}）`
-    }
-    if (payload.message) text += `：${payload.message}`
-    updateStateText.value = text
-  })
-})
-onUnmounted(() => {
-  cancelUpdateState?.()
-  cancelUpdateState = null
-})
+// 更新推送订阅、阶段文案映射与状态全部由 useUpdater 维护，消息提示留在本视图
+const { updateStateText, checkingUpdate, updateResult, checkForUpdates } = useUpdater()
 
 const checkForUpdate = async () => {
-  checkingUpdate.value = true
   try {
-    const res = await electron.checkForUpdates()
-    updateResult.value = res
+    const res = await checkForUpdates()
     if (res.supported) {
       message.success(res.version ? `检查完成，当前版本 v${res.version}` : '检查完成')
     } else {
@@ -257,8 +217,6 @@ const checkForUpdate = async () => {
     }
   } catch (err) {
     message.error(`检查更新失败：${errMsg(err)}`)
-  } finally {
-    checkingUpdate.value = false
   }
 }
 

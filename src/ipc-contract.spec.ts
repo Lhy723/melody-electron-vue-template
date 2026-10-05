@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { ipcChannels } from './shared/ipc/channels'
 
 // ==================== 源码收集工具 ====================
 
@@ -11,24 +12,15 @@ import { describe, expect, it } from 'vitest'
 const specUrl = import.meta.url
 const srcDir = fileURLToPath(new URL('.', specUrl))
 
-// 从源码中按正则提取通道名（本模板通道一律使用单引号）
-const extractChannels = (code: string, pattern: RegExp): string[] => {
-  const channels: string[] = []
-  for (const match of code.matchAll(pattern)) {
-    if (typeof match[1] === 'string') channels.push(match[1])
-  }
-  return channels
-}
-
-// 递归收集目录下所有 .ts 源文件路径
-const collectTsFiles = (dir: string): string[] => {
+// 递归收集目录下所有 .ts 源文件内容
+const collectTsSources = (dir: string): string[] => {
   const files: string[] = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const fullPath = join(dir, entry.name)
     if (entry.isDirectory()) {
-      files.push(...collectTsFiles(fullPath))
-    } else if (entry.name.endsWith('.ts')) {
-      files.push(fullPath)
+      files.push(...collectTsSources(fullPath))
+    } else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts')) {
+      files.push(readFileSync(fullPath, 'utf-8'))
     }
   }
   return files
@@ -39,38 +31,68 @@ const collectTsFiles = (dir: string): string[] => {
 // 渲染进程侧：preload 暴露的 API 即契约的调用方
 const preloadCode = readFileSync(join(srcDir, 'preload', 'index.ts'), 'utf-8')
 
-// 主进程侧：mainIpc.ts 接收窗口控制事件
-const mainIpcCode = readFileSync(join(srcDir, 'main', 'mainIpc.ts'), 'utf-8')
+// 主进程全部源码：mainIpc.ts + modules/* + index.ts（含窗口状态推送）
+const mainSources = [
+  ...collectTsSources(join(srcDir, 'main')),
+  readFileSync(join(srcDir, 'main', 'mainIpc.ts'), 'utf-8')
+]
+const allMainCode = mainSources.join('\n')
 
-// 主进程 modules 目录：所有 ipcMain.handle 的声明处
-const modulesDir = join(srcDir, 'main', 'modules')
-const modulesCode = readdirSync(modulesDir)
-  .filter((name) => name.endsWith('.ts'))
-  .map((name) => readFileSync(join(modulesDir, name), 'utf-8'))
-  .join('\n')
+// ==================== 通道表达式提取 ====================
 
-// 主进程全部源码：用于扫描 webContents.send 主动推送
-const allMainCode = collectTsFiles(join(srcDir, 'main'))
-  .map((file) => readFileSync(file, 'utf-8'))
-  .join('\n')
+// 源码已统一改用 ipcChannels.xxx.yyy 常量表达式，不再有手写字符串。
+// 提取「ipcChannels.」开头的成员访问表达式，再解析到 channels.ts 登记的字面量。
+const extractExpressions = (code: string, callPattern: RegExp): string[] => {
+  const expressions: string[] = []
+  for (const match of code.matchAll(callPattern)) {
+    if (typeof match[1] === 'string') expressions.push(match[1])
+  }
+  return [...new Set(expressions)]
+}
 
-// ==================== 通道提取 ====================
+// 从表达式中剔除「ipcChannels.」前缀
+const stripPrefix = (expression: string): string => expression.replace('ipcChannels.', '')
+
+// 沿成员路径解析到 channels.ts 登记的通道字面量；解析失败返回 undefined
+const resolveChannel = (expression: string): string | undefined => {
+  const value = stripPrefix(expression)
+    .split('.')
+    .reduce<unknown>((node, key) => {
+      if (node !== null && typeof node === 'object' && key in (node as Record<string, unknown>)) {
+        return (node as Record<string, unknown>)[key]
+      }
+      return undefined
+    }, ipcChannels as unknown)
+  return typeof value === 'string' ? value : undefined
+}
+
+// ==================== 三层通道收集 ====================
 
 // preload：渲染进程发起的 invoke / send，以及订阅的推送通道
-const invokeChannels = new Set(extractChannels(preloadCode, /ipcRenderer\.invoke\(\s*'([^']+)'/g))
-const sendChannels = new Set(extractChannels(preloadCode, /ipcRenderer\.send\(\s*'([^']+)'/g))
-const rendererOnChannels = new Set(extractChannels(preloadCode, /ipcRenderer\.on\(\s*'([^']+)'/g))
-// 主进程：事件接收与 invoke 处理器
-const mainOnChannels = new Set(extractChannels(mainIpcCode, /ipcMain\.on\(\s*'([^']+)'/g))
-const handleChannels = new Set(extractChannels(modulesCode, /ipcMain\.handle\(\s*'([^']+)'/g))
-// 主进程主动推送（fire-and-forget）
-const pushChannels = new Set(extractChannels(allMainCode, /webContents\.send\(\s*'([^']+)'/g))
+const invokeExprs = extractExpressions(preloadCode, /ipcRenderer\.invoke\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+const sendExprs = extractExpressions(preloadCode, /ipcRenderer\.send\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+const rendererOnExprs = extractExpressions(preloadCode, /ipcRenderer\.on\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+
+// 主进程：invoke 处理器（modules）、事件接收（mainIpc）、主动推送（webContents.send / ev.reply）
+const handleExprs = extractExpressions(allMainCode, /ipcMain\.handle\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+const mainOnExprs = extractExpressions(allMainCode, /ipcMain\.on\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+const pushExprs = extractExpressions(allMainCode, /(?:webContents\.send|\.reply)\(\s*(ipcChannels\.[A-Za-z0-9.]+)/g)
+
+// 表达式解析为通道字面量后的集合
+const resolveAll = (expressions: string[]): Set<string> =>
+  new Set(expressions.map((expression) => resolveChannel(expression) ?? `<未登记: ${expression}>`))
+
+const invokeChannels = resolveAll(invokeExprs)
+const sendChannels = resolveAll(sendExprs)
+const rendererOnChannels = resolveAll(rendererOnExprs)
+const handleChannels = resolveAll(handleExprs)
+const mainOnChannels = resolveAll(mainOnExprs)
+const pushChannels = resolveAll(pushExprs)
 
 // 集合差集：a 中有而 b 中没有的通道
-const missingIn = (a: Set<string>, b: Set<string>): string[] =>
-  [...a].filter((channel) => !b.has(channel))
+const missingIn = (a: Set<string>, b: Set<string>): string[] => [...a].filter((channel) => !b.has(channel))
 
-// 断言文档化通道均能被正则提取到（防止提取规则失效导致契约测试空转）
+// 断言已知通道均在对应集合中（防止提取规则失效导致契约测试空转）
 const expectAllExtracted = (channels: Set<string>, names: string[], label: string): void => {
   for (const name of names) {
     expect(channels.has(name), `${label} 通道 ${name} 未被提取到`).toBe(true)
@@ -78,13 +100,13 @@ const expectAllExtracted = (channels: Set<string>, names: string[], label: strin
 }
 
 // ==================== IPC 契约元测试 ====================
-// 静态扫描三层源码，保证通道契约对齐：
-//   invoke → ipcMain.handle；send → ipcMain.on；webContents.send → ipcRenderer.on
-// 只断言调用方向有承接，不要求反向全覆盖（如主进程保留的 window-restore）
+// 通道名单一来源于 channels.ts；本测试静态扫描三层源码中 ipcChannels.* 表达式，
+// 保证：invoke → ipcMain.handle；send → ipcMain.on；主进程推送 → ipcRenderer.on，
+// 且所有表达式都能解析回 channels.ts 登记的字面量（拼错通道名 = 编译期 + 此处双重拦截）。
 
 describe('IPC 契约（preload ↔ main 静态扫描）', () => {
-  it('提取器健全性：文档化通道均能被正则捕获', () => {
-    // 若此处失败，说明源码写法变化导致正则失效，需同步更新提取规则
+  it('表达式健全性：文档化通道均能被提取并解析回 channels.ts 登记', () => {
+    // 若此处失败，说明源码写法变化导致提取规则失效，需同步更新提取规则
     expectAllExtracted(
       invokeChannels,
       [
@@ -106,12 +128,14 @@ describe('IPC 契约（preload ↔ main 静态扫描）', () => {
     )
     expectAllExtracted(sendChannels, ['window-min', 'window-maxOrRestore', 'window-close'], 'send')
     expectAllExtracted(rendererOnChannels, ['windowState', 'updateState'], 'ipcRenderer.on')
-    expectAllExtracted(pushChannels, ['windowState', 'updateState'], 'webContents.send')
-    expectAllExtracted(
-      mainOnChannels,
-      ['window-min', 'window-maxOrRestore', 'window-close'],
-      'ipcMain.on'
-    )
+    expectAllExtracted(pushChannels, ['windowState', 'updateState'], '主进程推送')
+    expectAllExtracted(mainOnChannels, ['window-min', 'window-maxOrRestore', 'window-close'], 'ipcMain.on')
+  })
+
+  it('(d) 所有 ipcChannels 表达式都能解析为 channels.ts 已登记通道', () => {
+    for (const expression of [...invokeExprs, ...sendExprs, ...rendererOnExprs, ...handleExprs, ...mainOnExprs, ...pushExprs]) {
+      expect(resolveChannel(expression), `表达式 ${expression} 未登记或拼错`).toBeTypeOf('string')
+    }
   })
 
   it('(a) 每个 ipcRenderer.invoke 通道都有对应的 ipcMain.handle', () => {
@@ -122,7 +146,7 @@ describe('IPC 契约（preload ↔ main 静态扫描）', () => {
     expect(missingIn(sendChannels, mainOnChannels)).toEqual([])
   })
 
-  it('(c) 每个 webContents.send 推送通道都有对应的 ipcRenderer.on', () => {
+  it('(c) 每个主进程推送通道（webContents.send / ev.reply）都有对应的 ipcRenderer.on', () => {
     expect(missingIn(pushChannels, rendererOnChannels)).toEqual([])
   })
 

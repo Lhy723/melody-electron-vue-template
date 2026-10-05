@@ -1,9 +1,11 @@
 import { ipcMain, net } from 'electron'
 import log from 'electron-log/main'
+import { ipcChannels } from '../../shared/ipc/channels'
+import type { HttpGetResult } from '../../shared/ipc/types'
 
 // HTTP 请求 IPC：校验协议后用 net.fetch 走系统网络栈，绕开渲染进程的跨域限制
 export const registerHttpIpc = (): void => {
-  ipcMain.handle('http:get', async (_event, url: string) => {
+  ipcMain.handle(ipcChannels.http.get, async (_event, url: string): Promise<HttpGetResult> => {
     try {
       // 仅允许 http/https 协议，防止 file: 等协议被滥用
       const parsed = new URL(url)

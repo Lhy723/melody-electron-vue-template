@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import log from 'electron-log/main'
+import { ipcChannels } from '../shared/ipc/channels'
 import mainIpc from './mainIpc'
 import { appStore } from './modules/appStore'
 import { registerFileIpc } from './modules/fileIpc'
@@ -59,11 +60,11 @@ function createWindow(): BrowserWindow {
   })
 
   mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('windowState', true)
+    mainWindow.webContents.send(ipcChannels.window.stateChanged, true)
   })
 
   mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('windowState', false)
+    mainWindow.webContents.send(ipcChannels.window.stateChanged, false)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

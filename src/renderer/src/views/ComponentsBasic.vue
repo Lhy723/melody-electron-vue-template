@@ -1,10 +1,13 @@
 <script setup lang="ts">
-// 基础组件演示：按钮 / 输入 / 选择 / 数据展示
+// 基础组件演示：按钮 / 输入 / 选择 / 数据展示 / 文件操作
 import { ref } from 'vue'
+import { useMessage } from 'naive-ui'
+import { FolderOpen16Regular, Save16Regular } from '@vicons/fluent'
 import DemoPageHeader from '@renderer/components/demo/DemoPageHeader.vue'
 import DemoSection from '@renderer/components/demo/DemoSection.vue'
 import { demoTableColumns, demoTableData, demoSelectOptions } from '@renderer/utils/demoData'
 import type { DemoTableRow } from '@renderer/utils/demoData'
+import { useFileOps } from '@renderer/composables'
 
 // 输入状态
 const inputValue = ref('')
@@ -17,13 +20,62 @@ const rateValue = ref(3)
 
 // 表格行
 const rowKey = (row: DemoTableRow) => row.index
+
+/* ---------- 文件操作（useFileOps 演示） ---------- */
+const message = useMessage()
+const { openTextFile, saveTextFile } = useFileOps()
+
+// 打开文件结果
+const openedFileName = ref('')
+const openedFileContent = ref('')
+const openingFile = ref(false)
+const savingText = ref(false)
+
+// IPC 异常统一转成可读文案
+const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err ?? '未知错误'))
+
+const openDemoFile = async () => {
+  openingFile.value = true
+  try {
+    // 用户取消时 openTextFile 返回 null
+    const res = await openTextFile()
+    if (!res) {
+      message.info('已取消选择文件')
+      return
+    }
+    openedFileName.value = res.name || res.path || ''
+    openedFileContent.value = res.content ?? ''
+    message.success(`已打开：${openedFileName.value}`)
+  } catch (err) {
+    message.error(`打开文件失败：${errMsg(err)}`)
+  } finally {
+    openingFile.value = false
+  }
+}
+
+const saveDemoText = async () => {
+  savingText.value = true
+  try {
+    // 把上方多行文本另存为文件；用户取消时返回 null，成功返回保存路径
+    const savedPath = await saveTextFile(textareaValue.value, 'demo.txt')
+    if (savedPath === null) {
+      message.info('已取消保存')
+      return
+    }
+    message.success(`已保存到：${savedPath}`)
+  } catch (err) {
+    message.error(`保存文件失败：${errMsg(err)}`)
+  } finally {
+    savingText.value = false
+  }
+}
 </script>
 
 <template>
   <div class="basic-demo">
     <DemoPageHeader
       title="基础组件"
-      description="展示 Naive UI 常用基础元素的状态与用法，均可直接交互：点击、输入、切换、拖动。"
+      description="展示 Naive UI 常用基础元素的状态与用法，均可直接交互：点击、输入、切换、拖动；另附 useFileOps 文件打开与保存演示。"
     />
     <!-- 按钮 -->
     <DemoSection
@@ -109,6 +161,31 @@ const rowKey = (row: DemoTableRow) => row.index
         size="small"
         striped
       />
+    </DemoSection>
+    <!-- 文件操作 -->
+    <DemoSection
+      title="文件操作"
+      description="通过组合式函数 useFileOps 调用主进程的原生文件对话框：打开文本文件回显内容，把上方多行文本另存到本地。"
+    >
+      <n-flex :size="12" align="center" wrap>
+        <n-button :loading="openingFile" :focusable="false" secondary @click="openDemoFile">
+          <template #icon>
+            <n-icon><FolderOpen16Regular /></n-icon>
+          </template>
+          打开文件
+        </n-button>
+        <n-button :loading="savingText" :focusable="false" secondary @click="saveDemoText">
+          <template #icon>
+            <n-icon><Save16Regular /></n-icon>
+          </template>
+          保存多行文本
+        </n-button>
+      </n-flex>
+      <template v-if="openedFileName">
+        <n-text depth="3">已打开：{{ openedFileName }}</n-text>
+        <n-input :value="openedFileContent" type="textarea" :rows="4" readonly placeholder="文件内容" />
+      </template>
+      <n-text v-else depth="3">还没有打开文件，点击上方按钮试试。</n-text>
     </DemoSection>
   </div>
 </template>

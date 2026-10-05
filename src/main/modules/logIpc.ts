@@ -1,5 +1,7 @@
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { ipcChannels } from '../../shared/ipc/channels'
+import type { LogWritePayload } from '../../shared/ipc/types'
 
 // 初始化主进程日志：写入用户数据目录下的 logs/main.log，info 及以上级别落盘
 export const setupMainLog = (): void => {
@@ -9,7 +11,7 @@ export const setupMainLog = (): void => {
 
 // 日志 IPC：渲染进程写日志、查询日志文件路径
 export const registerLogIpc = (): void => {
-  ipcMain.handle('log:write', (_event, payload: { message: string; level?: string }) => {
+  ipcMain.handle(ipcChannels.log.write, (_event, payload: LogWritePayload) => {
     const message = `[renderer] ${payload?.message ?? ''}`
     switch (payload?.level) {
       case 'error':
@@ -24,5 +26,5 @@ export const registerLogIpc = (): void => {
     return log.transports.file.getFile().path
   })
 
-  ipcMain.handle('log:path', () => log.transports.file.getFile().path)
+  ipcMain.handle(ipcChannels.log.path, () => log.transports.file.getFile().path)
 }
