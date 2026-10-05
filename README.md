@@ -12,6 +12,8 @@
 
 ![CI](https://github.com/Lhy723/melody-electron-vue-template/actions/workflows/ci.yml/badge.svg) ![Tech Stack](https://img.shields.io/badge/Electron-44-47848F) ![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D) ![Naive UI](https://img.shields.io/badge/Naive_UI-2.x-18A058) ![License](https://img.shields.io/badge/License-MIT-green)
 
+📖 在线文档：<https://lhy723.github.io/melody-electron-vue-template/>（源码在 `docs/` 目录，推送到 main 自动部署）
+
 ## 功能特性
 
 每个特性对应独立的模块或演示页。你可以在应用内直接体验它们。
