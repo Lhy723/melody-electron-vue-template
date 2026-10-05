@@ -13,6 +13,7 @@
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "test": "vitest run",
     "test:watch": "vitest",
+    "gen:capability": "node scripts/gen-capability.mjs",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "pnpm run typecheck && electron-vite build",

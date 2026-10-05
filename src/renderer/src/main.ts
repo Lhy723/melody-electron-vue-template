@@ -19,4 +19,11 @@ pinia.use(piniaPluginPersistedstate)
 app.use(naive)
 app.use(pinia)
 app.use(router)
+// 渲染层全局错误接入文件日志（浏览器预览无 preload 时跳过）
+app.config.errorHandler = (err, _instance, info) => {
+  console.error(err)
+  if (typeof window.electron !== 'undefined') {
+    void window.electron.logWrite(`[vue] ${String(err)} (${info})`, 'error')
+  }
+}
 app.mount('#app')

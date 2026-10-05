@@ -1,0 +1,37 @@
+name: Release
+
+# 推送 v* 标签时自动发布，也可在 Actions 页面手动触发
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: 打包并发布
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      # electron-builder 打包依赖 electron-vite 的构建产物（out/ 目录），需先产出
+      - name: 构建产物
+        run: pnpm run build
+
+      # electron-builder 依据 electron-builder.yml 的 publish 配置（provider: github）
+      # 自动创建当前 tag 对应的 GitHub Release 并上传安装包 + latest.yml + blockmap；
+      # tagName 与 electron-builder.yml 中的 .tagName 一致，即触发本工作流的 v* 标签
+      - name: 打包并发布
+        run: pnpm exec electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
