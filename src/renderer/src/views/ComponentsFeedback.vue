@@ -25,6 +25,10 @@ const openDrawer = (placement: DrawerPlacement) => {
 // 进度条
 const progressValue = ref(65)
 
+// 骨架屏与加载遮罩
+const showSkeleton = ref(true)
+const spinShow = ref(true)
+
 // 消息提示
 const notifyTypes = ['info', 'success', 'warning', 'error'] as const
 type NotifyType = (typeof notifyTypes)[number]
@@ -105,6 +109,43 @@ const pushNotification = (type: NotifyType) => {
       <n-flex :size="40" align="center" wrap>
         <n-progress type="line" :percentage="progressValue" indicator-placement="inside" style="max-width: 420px" />
         <n-progress type="circle" :percentage="progressValue" />
+      </n-flex>
+    </DemoSection>
+    <!-- 气泡与状态 -->
+    <DemoSection
+      title="气泡与状态"
+      description="警告告警、工具提示、弹出框、气泡确认与加载占位，补齐反馈类组件的最后几块。"
+    >
+      <n-flex vertical :size="16">
+        <n-alert type="success" title="操作成功">这是一个成功告警。</n-alert>
+        <n-alert type="warning" title="注意">这是一个警告告警。</n-alert>
+        <n-flex :size="12" wrap>
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button>悬停提示</n-button>
+            </template>
+            工具提示内容
+          </n-tooltip>
+          <n-popover trigger="click">
+            <template #trigger>
+              <n-button>点击弹出</n-button>
+            </template>
+            弹出框内容区域
+          </n-popover>
+          <n-popconfirm @positive-click="message.success('已确认删除')">
+            <template #trigger>
+              <n-button type="error" secondary>删除</n-button>
+            </template>
+            确认删除吗？
+          </n-popconfirm>
+          <n-button quaternary @click="showSkeleton = !showSkeleton">切换骨架屏</n-button>
+          <n-button quaternary @click="spinShow = !spinShow">切换加载遮罩</n-button>
+        </n-flex>
+        <n-skeleton v-if="showSkeleton" text :repeat="2" style="max-width: 420px" />
+        <n-text v-else depth="3">骨架屏已关闭。</n-text>
+        <n-spin :show="spinShow" style="max-width: 420px">
+          <n-card size="small" embedded>被加载遮罩包裹的内容区域。</n-card>
+        </n-spin>
       </n-flex>
     </DemoSection>
 

@@ -7,7 +7,17 @@ import globals from 'globals'
 
 export default withVueTs(
   {
-    ignores: ['node_modules/**', 'dist/**', 'out/**', '.gitignore', '.mimosa/**', '.zcode/**']
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '**/dist/**',
+      '**/node_modules/**',
+      'out/**',
+      '.gitignore',
+      '.mimosa/**',
+      '.zcode/**',
+      'docs/.vitepress/cache/**'
+    ]
   },
   eslintConfig,
   {

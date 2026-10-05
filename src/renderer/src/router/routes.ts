@@ -59,6 +59,22 @@ const routes: RouteRecordRaw[] = [
     },
     component: () => import('../views/DesktopCapabilities.vue')
   },
+  {
+    path: '/components/data',
+    name: 'components-data',
+    meta: {
+      title: '数据进阶'
+    },
+    component: () => import('../views/ComponentsData.vue')
+  },
+  {
+    path: '/components/extensions',
+    name: 'components-extensions',
+    meta: {
+      title: '扩展库示例'
+    },
+    component: () => import('../views/ExtensionsDemo.vue')
+  },
   // 设置
   {
     path: '/settings',

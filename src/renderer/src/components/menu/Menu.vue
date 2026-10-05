@@ -9,7 +9,9 @@ import {
   ChatMultiple16Regular,
   List16Regular,
   Desktop16Regular,
-  Options16Regular
+  Options16Regular,
+  DataTrending16Regular,
+  Wand16Regular
 } from '@vicons/fluent'
 import { computed, h, ref, watch } from 'vue'
 import type { MenuInst, MenuOption, MenuGroupOption } from 'naive-ui'
@@ -126,6 +128,30 @@ const menuOptions = computed<Array<MenuOption | MenuGroupOption>>(() => [
           ),
         key: 'components-desktop',
         icon: () => h(Options16Regular)
+      },
+      {
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: { name: 'components-data' }
+            },
+            () => ['数据进阶']
+          ),
+        key: 'components-data',
+        icon: () => h(DataTrending16Regular)
+      },
+      {
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: { name: 'components-extensions' }
+            },
+            () => ['扩展库示例']
+          ),
+        key: 'components-extensions',
+        icon: () => h(Wand16Regular)
       }
     ]
   },
