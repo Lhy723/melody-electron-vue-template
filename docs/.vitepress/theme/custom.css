@@ -10,6 +10,11 @@
   --vp-c-brand-soft: rgba(24, 160, 88, 0.2);
 }
 
+/* 顶栏统一背景：非首页时默认透明，左侧压在侧边栏灰底上会呈现一半灰一半白 */
+.VPNavBar:not(.home) {
+  background-color: var(--vp-c-bg);
+}
+
 /* 首页 Hero 截图：圆角与投影 */
 .VPHomeHero .image-src,
 .VPImage.image-src {
